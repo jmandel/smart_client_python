@@ -1,40 +1,42 @@
 import re
 
 class SMART_Querier(object):
-    @classmethod
-    def query_one(cls, stype, id, filter_clause=""):
-        return cls.query(stype, one_name=id,filter_clause=filter_clause)
-
-    @classmethod
-    def query_all(cls, stype, above_type=None, above_uri=None,filter_clause=""):
-        return cls.query(stype, above_type=above_type, above_uri=above_uri,filter_clause=filter_clause)
 
     @classmethod
     def query(cls, 
               stype, 
-              one_name="?root_subject", 
-              above_type=None, 
-              above_uri=None, 
-              filter_clause=""):
+              subjects = None,
+              extra_filters="",
+              restricted_context=True):
+
         ret = """
         BASE <http://smartplatforms.org/>
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         CONSTRUCT { $construct_triples }
-        FROM $context
-        WHERE {
+        """
+
+        if restricted_context:
+            ret += " FROM $context "
+
+        ret += """WHERE {
            { $query_triples } 
            $filter_clause
         }
         """
 
-        q = QueryBuilder(stype, one_name)
-        
-        if (above_type and above_uri):
-            q.require_above(above_type, above_uri)
+        q = QueryBuilder(stype, "?root_subject")
         b = q.build()
 
         ret = ret.replace("$construct_triples", q.construct_triples())
         ret = ret.replace("$query_triples", b)        
+
+        filter_clause = extra_filters
+        if subjects:
+            filter_clause += " FILTER (" + " || ".join([ 
+                             " ?root_subject = " +x.n3()
+                                    for x in subjects ] 
+                              ) + ")"
+
         ret = ret.replace("$filter_clause", filter_clause)
         return ret
 
@@ -47,12 +49,6 @@ class QueryBuilder(object):
 
     def construct_triples(self):
         return "\n ".join(self.triples_created)
-        
-    def require_above(self, above_type=None, above_uri=None):
-        if (above_uri == None): return
-        predicate = above_type.predicate_for_contained_type(self.root_type)
-        predicate = str(predicate)
-        self.required_triple("<"+above_uri+">", "<"+predicate+">", self.root_name )
         
     def get_identifier(self, id_base, role=""):
         if id_base.startswith("<") or id_base.startswith("_:"): return id_base
