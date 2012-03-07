@@ -29,15 +29,13 @@ class SMART_Querier(object):
 
         ret = ret.replace("$construct_triples", q.construct_triples())
         ret = ret.replace("$query_triples", b)        
+        ret = ret.replace("$filter_clause", extra_filters)
 
-        filter_clause = extra_filters
         if subjects:
-            filter_clause += " FILTER (" + " || ".join([ 
-                             " ?root_subject = " +x.n3()
-                                    for x in subjects ] 
-                              ) + ")"
+            ret += " BINDINGS ?root_subject {\n(" + ")\n(".join([
+                        x.n3() for x in subjects
+                   ]) +")}"
 
-        ret = ret.replace("$filter_clause", filter_clause)
         return ret
 
 class QueryBuilder(object):
