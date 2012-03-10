@@ -5,21 +5,19 @@ class SMART_Querier(object):
     @classmethod
     def query(cls, 
               stype, 
-              subjects = None,
-              extra_filters="",
-              restricted_context=True):
+              bindings = None,
+              single_patient = False,
+              extra_filters=""):
 
         ret = """
-        BASE <http://smartplatforms.org/>
+        BASE <http://smartplatforms.org/terms#>
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         CONSTRUCT { $construct_triples }
         """
 
-        if restricted_context:
-            ret += " FROM $context "
-
         ret += """WHERE {
-           { $query_triples } 
+           $query_triples 
+           $patient_match
            $filter_clause
         }
         """
@@ -27,13 +25,20 @@ class SMART_Querier(object):
         q = QueryBuilder(stype, "?root_subject")
         b = q.build()
 
+        if single_patient:
+            single_patient =  "$patient <http://smartplatforms.org/terms#hasStatement> ?root_subject. "
+        else:
+            single_patient = ""
+
+
+        ret = ret.replace("$patient_match", single_patient)
         ret = ret.replace("$construct_triples", q.construct_triples())
         ret = ret.replace("$query_triples", b)        
         ret = ret.replace("$filter_clause", extra_filters)
 
-        if subjects:
+        if bindings:
             ret += " BINDINGS ?root_subject {\n(" + ")\n(".join([
-                        x.n3() for x in subjects
+                        x.n3() for x in bindings
                    ]) +")}"
 
         return ret
