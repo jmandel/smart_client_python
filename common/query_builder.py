@@ -16,22 +16,17 @@ class SMART_Querier(object):
         """
 
         ret += """WHERE {
-           $query_triples 
-           $patient_match
-           $filter_clause
+           $record <http://smartplatforms.org/terms#hasStatement> ?root_subject.
+           graph ?root_subject  {
+               $query_triples 
+               $filter_clause
+           }
         }
         """
 
         q = QueryBuilder(stype, "?root_subject")
         b = q.build()
 
-        if single_patient:
-            single_patient =  "$patient <http://smartplatforms.org/terms#hasStatement> ?root_subject. "
-        else:
-            single_patient = ""
-
-
-        ret = ret.replace("$patient_match", single_patient)
         ret = ret.replace("$construct_triples", q.construct_triples())
         ret = ret.replace("$query_triples", b)        
         ret = ret.replace("$filter_clause", extra_filters)
