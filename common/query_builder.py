@@ -16,7 +16,6 @@ class SMART_Querier(object):
         """
 
         ret += """WHERE {
-           $record <http://smartplatforms.org/terms#hasStatement> ?root_subject.
            graph ?root_subject  {
                $query_triples 
                $filter_clause
